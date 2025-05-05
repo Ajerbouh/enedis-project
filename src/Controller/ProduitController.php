@@ -33,7 +33,6 @@ final class ProduitController extends AbstractController
         $errors = [];
 
         if ($form->isSubmitted()) {
-            // Validation personnalisée ou via le composant Validator
             $violations = $validator->validate($produit);
 
             foreach ($violations as $violation) {
