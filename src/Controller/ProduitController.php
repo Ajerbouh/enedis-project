@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/produit')]
 final class ProduitController extends AbstractController
@@ -23,22 +24,34 @@ final class ProduitController extends AbstractController
     }
 
     #[Route('/new', name: 'app_produit_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, ValidatorInterface $validator): Response
     {
         $produit = new Produit();
         $form = $this->createForm(ProduitForm::class, $produit);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($produit);
-            $entityManager->flush();
+        $errors = [];
 
-            return $this->redirectToRoute('app_produit_index', [], Response::HTTP_SEE_OTHER);
+        if ($form->isSubmitted()) {
+            // Validation personnalisée ou via le composant Validator
+            $violations = $validator->validate($produit);
+
+            foreach ($violations as $violation) {
+                $errors[] = $violation->getMessage();
+            }
+
+            if ($form->isValid() && count($errors) === 0) {
+                $entityManager->persist($produit);
+                $entityManager->flush();
+
+                return $this->redirectToRoute('app_produit_index');
+            }
         }
 
         return $this->render('produit/new.html.twig', [
             'produit' => $produit,
             'form' => $form,
+            'errors' => $errors,
         ]);
     }
 
